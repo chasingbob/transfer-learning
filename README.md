@@ -4,7 +4,7 @@ exploring ways to learn with the least amount of labelled data by taking advanta
 I've set myself out to classify images of my dogs using deep learning using the least amount of training photos. 
 Fine tuning an existing model is the first part of a 3x part series exploring different ways of using Transfer Learning to accomplish training with little data.
 
-![Bastian](images/bastian.jpg | width=150) ![Bella](images/bella.jpg | width=150) ![Grace](images/grace.jpg | width=150) ![Pablo](images/pablo.jpg | width=150)
+![Bastian](images/bastian.jpg) ![Bella](images/bella.jpg) ![Grace](images/grace.jpg) ![Pablo](images/pablo.jpg)
 
 Who wouldn't want to train on them? :-)
 
