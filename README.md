@@ -14,5 +14,5 @@ Who wouldn't want to train on them? :-)
 The idea is to fine-tune a model trained on a large publicly available data set. I chose the Kaggle cats vs. dogs data set with 25000 images (12500 cats, 12500 dogs) hoping that my model will learn enough about dogs to be able to fine tune the model on a small set of my dog images.
 
 
-![Architecture]('images/transfer-learning-custom-model.png')
+![Architecture]('/images/transfer-learning-custom-model.png')
 
