@@ -1,5 +1,6 @@
 # project specific
 data/
+tf_logs/
 *.ckpt.*
 
 # Byte-compiled / optimized / DLL files
