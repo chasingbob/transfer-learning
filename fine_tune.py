@@ -77,10 +77,6 @@ def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
         pool = tf.nn.max_pool(conv, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID")
         return pool
 
-#learning_rate = 1e-3
-#epochs = 25
-#batch_size = 56
-
 @click.command()
 @click.option('--model_path', default='', help='path to base model')
 @click.option('--epochs', default=3, help='number of epochs to train model')
@@ -91,7 +87,7 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
     print('Fine tuning...')
 
     X_data, y_data = load_data()
-    X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.25, random_state=41)
+    X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.2, random_state=44)
 
     tf.reset_default_graph()
     saver = tf.train.import_meta_graph(model_path)
@@ -107,7 +103,8 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
     # get 5th hidden layer
     print('Get conv-max-5...')
     convmax5 = tf.get_default_graph().get_tensor_by_name("model/conv-max-5/MaxPool:0")
-    print(convmax5.shape)
+    #print(convmax5.shape)
+    # This will freeze all the layers upto convmax5
     convmax_stop = tf.stop_gradient(convmax5)
 
     print('Create new model')
@@ -119,7 +116,7 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
             new_pool6_flat = tf.reshape(convmax6, shape=[-1, 64 * 2 * 2])
 
         with tf.name_scope('fc-1'):
-            new_dense = tf.layers.dense(inputs=new_pool6_flat, units=1024, activation=tf.nn.relu)
+            new_dense = tf.layers.dense(inputs=new_pool6_flat, units=512, activation=tf.nn.relu)
         with tf.name_scope('drop-out-1'):
             new_dropout = tf.layers.dropout(inputs=new_dense, rate=0.5)
 
@@ -142,11 +139,10 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
         training_op = optimizer.minimize(loss)
 
     with tf.name_scope('summary'):
-        val_acc_summary = tf.summary.scalar('val_acc', accuracy)
-        train_acc_summary = tf.summary.scalar('train_acc', accuracy)
-        file_writer = tf.summary.FileWriter(logdir, tf.get_default_graph())
-
-    print('Init')
+        # This is a bit of a hack to get TensorBoard to display graphs on same chart
+        acc_summary = tf.summary.scalar('acc', accuracy)
+        val_file_writer = tf.summary.FileWriter('tf_logs/val', tf.get_default_graph())
+        train_file_writer = tf.summary.FileWriter('tf_logs/train', tf.get_default_graph())
 
     init = tf.global_variables_initializer()
     #new_saver = tf.train.Saver()
@@ -157,7 +153,6 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
 
         for epoch in range(epochs):
             for iteration in range(len(X_train) // batch_size):
-#                print('Epoch: {} Iteration: {}'.format(epoch, iteration))
                 X_batch = fetch_batch(X_train, iteration, batch_size) 
                 y_batch = fetch_batch(y_train, iteration, batch_size) 
 
@@ -165,10 +160,10 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
 
                 step += 1
                 if step % feedback_step == 0:
-                    train_acc_str = train_acc_summary.eval(feed_dict={X: X_batch, y: y_batch})
-                    val_acc_str = val_acc_summary.eval(feed_dict={X: X_test, y: y_test})
-                    file_writer.add_summary(train_acc_str, step)
-                    file_writer.add_summary(val_acc_str, step)
+                    train_acc_str = acc_summary.eval(feed_dict={X: X_batch, y: y_batch})
+                    val_acc_str = acc_summary.eval(feed_dict={X: X_test, y: y_test})
+                    train_file_writer.add_summary(train_acc_str, step)
+                    val_file_writer.add_summary(val_acc_str, step)
             accuracy_val = accuracy.eval(feed_dict={X: X_test,y: y_test})
             print(epoch, "Test accuracy:", accuracy_val)
 
