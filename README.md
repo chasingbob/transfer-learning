@@ -1,8 +1,10 @@
 # transfer-learning
-exploring ways to learn with the least amount of labelled data by taking advantage of transfer-learning techniques
+Exploring ways to learn with the least amount of labelled data by taking advantage of transfer-learning techniques.
 
-I've set myself out to classify images of my dogs using deep learning using the least amount of training photos. 
-Fine tuning an existing model is the first part of a 3x part series exploring different ways of using Transfer Learning to accomplish training with little data.
+I've set myself the challenge to classify images of my dogs using the least amount of training photos. 
+To train a model based on a large freely available public dataset and to fine tune the model using the small dataset of my dogs is the first part of a 3 part series exploring different ways of using Transfer Learning to accomplish training with little data.
+
+## Meet the dogs
 
 ![Bastian](images/bastian.jpg) ![Bella](images/bella.jpg) ![Grace](images/grace.jpg) ![Pablo](images/pablo.jpg)
 

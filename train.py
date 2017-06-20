@@ -62,8 +62,11 @@ file_count = count
         
 # test-train split   
 X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.05, random_state=43)
-print('X: {} {}'.format(X_train.shape[0], X_train.shape))
-print('y: {} {}'.format(Y_train.shape[0], Y_train.shape))  
+X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=97)
+print('Train/Val/Test split:')
+print('X_train: {} {}'.format(X_train.shape[0], X_train.shape))
+print('X_val: {} {}'.format(X_val.shape[0], X_val.shape))
+print('X_test: {} {}'.format(X_test.shape[0], X_test.shape))
 
 now = datetime.utcnow().strftime('%Y%m%d%H%M%S')
 root_path = 'tf_logs'
@@ -113,26 +116,27 @@ with tf.name_scope('ops-1'):
     #optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.001)
     training_op = optimizer.minimize(loss)
 
-with tf.name_scope('feedback'):
+with tf.name_scope('summary'):
     # accuracy
     correct = tf.nn.in_top_k(logits, y, 1)
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name='accuracy')
+    # This is a bit of a hack to get TensorBoard to display graphs on same chart
+    #acc_summary = tf.summary.scalar('acc', accuracy)
 
-    # TensorBoard
-    val_acc_summary = tf.summary.scalar('val_acc', accuracy)
-    train_acc_summary = tf.summary.scalar('train_acc', accuracy)
+    current_acc = tf.Variable(0.0, name="current_acc")
+    acc_summary = tf.summary.scalar('acc', current_acc)
+    val_file_writer = tf.summary.FileWriter('tf_logs/val', tf.get_default_graph())
+    train_file_writer = tf.summary.FileWriter('tf_logs/train', tf.get_default_graph())
 
+    write_op = tf.summary.merge_all()
 
-
-val_file_writer = tf.summary.FileWriter('tf_logs/log2/', tf.get_default_graph())
-train_file_writer = tf.summary.FileWriter('tf_logs/log2/', tf.get_default_graph())
 
 # Init
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 n_epochs = 150
-batch_size = 256
+batch_size = 128
 
 avg_acc = []
 train_accs = []
@@ -140,11 +144,11 @@ test_accs = []
 
 
 def train():
+    print('Training started...')
     init.run()
     step = 0
     prev_best = 0
     for epoch in range(n_epochs):
-        n_batches = len(X_train) // batch_size
         for i in range(len(X_train) // batch_size):
             X_train_batch = fetch_batch(X_train, i, batch_size)
             Y_train_batch = fetch_batch(Y_train, i, batch_size)
@@ -152,31 +156,34 @@ def train():
             sess.run(training_op, feed_dict={X: X_train_batch, y: Y_train_batch})
             
             step += 1
-            if step % 100 == 0:
+            val_accs = []
+            if step % 10 == 0:
                 # TensorBoard feedback step
-                val_str = val_acc_summary.eval(feed_dict={X: X_val, y: Y_val})
-                train_str = train_acc_summary.eval(feed_dict={X: X_train_batch, y: Y_train_batch})
-                
-                val_file_writer.add_summary(val_str, step)
-                train_file_writer.add_summary(train_str, step)
-                
-                #acc_train = accuracy.eval(feed_dict={X: X_batch, y: Y_batch})
-                #acc_test = accuracy.eval(feed_dict={X: X_val, y: Y_test})
-                
-        rand = rnd.randint(0, n_batches-1)
-        X_batch = fetch_batch(X_train, rand, batch_size)
-        Y_batch = fetch_batch(Y_train, rand, batch_size)
-        acc_train = accuracy.eval(feed_dict={X: X_batch, y: Y_batch})
-        acc_test = accuracy.eval(feed_dict={X: X_val, y: Y_val})
-        
-        train_accs.append(acc_train)
-        test_accs.append(acc_test)
-        print(epoch, 'Train acc: {}-{} Val acc: {}'.format(rand, acc_train, acc_test))
+                val_accs[:] = []
 
-        if acc_test > prev_best:
-            print('... save')
-            prev_best = acc_test
-            save_path = saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(epoch, acc_test))
+                for j in range(len(X_val) // batch_size):
+                    X_val_batch = fetch_batch(X_val, j, batch_size)
+                    y_val_batch = fetch_batch(y_val, j, batch_size)
+
+                    val_acc = sess.run(accuracy, feed_dict={X:X_val_batch, y: y_val_batch})
+                    val_accs.append(val_acc)
+                
+                temp_acc = sum(val_accs)/len(val_accs)
+                _summary = sess.run(write_op, {current_acc: temp_acc})
+                val_file_writer.add_summary(_summary, step)
+                val_file_writer.flush()
+
+                train_acc = sess.run(accuracy, feed_dict={X:X_train_batch, y: Y_train_batch})
+                _summary = sess.run(write_op, {current_acc: train_acc})
+                train_file_writer.add_summary(_summary, step)
+                train_file_writer.flush()
+
+                print('{}-{} Train acc: {} Val acc: {}'.format(epoch, step, train_acc, temp_acc))
+
+#                if acc_test > prev_best:
+#                    print('... save')
+#                    prev_best = acc_test
+#                    save_path = saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(epoch, acc_test))
 
 
 def load_model():

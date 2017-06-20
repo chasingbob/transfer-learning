@@ -16,8 +16,6 @@ from sklearn.model_selection import train_test_split
 rnd.seed(45)
 data_path = './data/dogs'
 root_logdir = "tf_logs"
-now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
-logdir = "{}/finetune-run-{}/".format(root_logdir, now)
 
 def fetch_batch(X, iteration, batch_size):
     i = iteration * batch_size
@@ -101,14 +99,18 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
     y = tf.get_default_graph().get_tensor_by_name("y:0")
 
     # get 5th hidden layer
-    print('Get conv-max-5...')
+    print('Get conv-max-4...')
     convmax5 = tf.get_default_graph().get_tensor_by_name("model/conv-max-5/MaxPool:0")
+    #convmax4 = tf.get_default_graph().get_tensor_by_name("model/conv-max-4/MaxPool:0")
     #print(convmax5.shape)
     # This will freeze all the layers upto convmax5
     convmax_stop = tf.stop_gradient(convmax5)
 
     print('Create new model')
     with tf.name_scope('new-model'):
+        #convmax5 = conv_maxpool(inputs=convmax_stop, num_filters=64, name='conv-max-5')
+        #print('conv-max-5: {}'.format(convmax5.shape))
+
         convmax6 = conv_maxpool(inputs=convmax_stop, num_filters=64, name='conv-max-6')
         print('conv-max-6: {}'.format(convmax6.shape))
     
@@ -116,7 +118,7 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
             new_pool6_flat = tf.reshape(convmax6, shape=[-1, 64 * 2 * 2])
 
         with tf.name_scope('fc-1'):
-            new_dense = tf.layers.dense(inputs=new_pool6_flat, units=512, activation=tf.nn.relu)
+            new_dense = tf.layers.dense(inputs=new_pool6_flat, units=1024, activation=tf.nn.relu)
         with tf.name_scope('drop-out-1'):
             new_dropout = tf.layers.dropout(inputs=new_dense, rate=0.5)
 
@@ -135,7 +137,8 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
         accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
 
     with tf.name_scope("new_train"):
-        optimizer = tf.train.AdamOptimizer()  # GradientDescentOptimizer(learning_rate)
+        optimizer = tf.train.AdamOptimizer()  
+        #optimizer = tf.train.GradientDescentOptimizer(0.0001)
         training_op = optimizer.minimize(loss)
 
     with tf.name_scope('summary'):
