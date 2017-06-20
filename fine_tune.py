@@ -14,8 +14,8 @@ import matplotlib.image as mpimg
 from sklearn.model_selection import train_test_split
 
 rnd.seed(45)
-data_path = './data/dogs'
 root_logdir = "tf_logs"
+data_path = './data/dogs'
 
 def fetch_batch(X, iteration, batch_size):
     i = iteration * batch_size
@@ -45,15 +45,15 @@ def fetch_files(dog_name, image_size=128, label=0):
 
 def load_data():
     print('Load and process images...')
-    images = []
+    #images = []
     x1, y1 = fetch_files(dog_name = 'bastian', label=0)
-    images.append(x1)
+#    images.append(x1)
     x2, y2 = fetch_files(dog_name = 'grace', label=1)
-    images.append(x2)
+#    images.append(x2)
     x3, y3 = fetch_files(dog_name = 'bella', label=2)
-    images.append(x3)
+#    images.append(x3)
     x4, y4 = fetch_files(dog_name = 'pablo', label=3)
-    images.append(x4)
+#    images.append(x4)
 
     _X = np.concatenate(  (x1, np.concatenate( (x2,   np.concatenate( (x3, x4), axis=0)   ), axis=0)), axis=0)
     _y = np.concatenate(  (y1, np.concatenate( (y2,   np.concatenate( (y3, y4), axis=0)   ), axis=0)), axis=0) 
