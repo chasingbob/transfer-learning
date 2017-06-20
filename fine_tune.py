@@ -45,15 +45,10 @@ def fetch_files(dog_name, image_size=128, label=0):
 
 def load_data():
     print('Load and process images...')
-    #images = []
     x1, y1 = fetch_files(dog_name = 'bastian', label=0)
-#    images.append(x1)
     x2, y2 = fetch_files(dog_name = 'grace', label=1)
-#    images.append(x2)
     x3, y3 = fetch_files(dog_name = 'bella', label=2)
-#    images.append(x3)
     x4, y4 = fetch_files(dog_name = 'pablo', label=3)
-#    images.append(x4)
 
     _X = np.concatenate(  (x1, np.concatenate( (x2,   np.concatenate( (x3, x4), axis=0)   ), axis=0)), axis=0)
     _y = np.concatenate(  (y1, np.concatenate( (y2,   np.concatenate( (y3, y4), axis=0)   ), axis=0)), axis=0) 
@@ -85,11 +80,11 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
     print('Fine tuning...')
 
     X_data, y_data = load_data()
-    X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.2, random_state=44)
+    X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.25, random_state=44)
 
     tf.reset_default_graph()
-    saver = tf.train.import_meta_graph(model_path)
     
+    saver = tf.train.import_meta_graph(model_path)
     # Access the graph
     #for op in tf.get_default_graph().get_operations():
     #    print(op.name)
@@ -138,7 +133,6 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
 
     with tf.name_scope("new_train"):
         optimizer = tf.train.AdamOptimizer()  
-        #optimizer = tf.train.GradientDescentOptimizer(0.0001)
         training_op = optimizer.minimize(loss)
 
     with tf.name_scope('summary'):
@@ -167,8 +161,8 @@ def fine_tune(model_path, epochs, batch_size, learning_rate, feedback_step):
                     val_acc_str = acc_summary.eval(feed_dict={X: X_test, y: y_test})
                     train_file_writer.add_summary(train_acc_str, step)
                     val_file_writer.add_summary(val_acc_str, step)
-            accuracy_val = accuracy.eval(feed_dict={X: X_test,y: y_test})
-            print(epoch, "Test accuracy:", accuracy_val)
+                    accuracy_val = accuracy.eval(feed_dict={X: X_test,y: y_test})
+                    print('{}-{} Test accuracy: {}'.format(epoch, step,accuracy_val))
 
 
 def test_predict():

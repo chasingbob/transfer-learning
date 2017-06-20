@@ -32,11 +32,11 @@ print(file_count)
 
 image_size = 128
 
-file_count = 20000
+file_count = 21000
 allX = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
 ally = np.zeros(file_count)
 count = 0
-for f in cat_files[:10000]:
+for f in cat_files[:10500]:
     try:
         img = io.imread(f)
         new_img = imresize(img, (image_size, image_size, 3))
@@ -47,7 +47,7 @@ for f in cat_files[:10000]:
     except:
         continue
 
-for f in dog_files[:10000]:
+for f in dog_files[:10500]:
     try:
         img = io.imread(f)
         new_img = imresize(img, (image_size, image_size, 3))
@@ -180,10 +180,10 @@ def train():
 
                 print('{}-{} Train acc: {} Val acc: {}'.format(epoch, step, train_acc, temp_acc))
 
-#                if acc_test > prev_best:
-#                    print('... save')
-#                    prev_best = acc_test
-#                    save_path = saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(epoch, acc_test))
+                if temp_acc > prev_best:
+                    print('... save')
+                    prev_best = acc_test
+                    save_path = saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(epoch, acc_test))
 
 
 def load_model():
