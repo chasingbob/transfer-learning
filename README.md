@@ -37,8 +37,9 @@ As can be seen from the diagram the bottom 4 layers are transferred and locked, 
 
 Create the following folder structure:
 
-transfer-learning
-(the source code lives here)
+
+|transfer-learning (the source code lives here)
+
 |
 
 |----data (the train/test data lives here)
