@@ -40,13 +40,9 @@ Create the following folder structure:
 transfer-learning
 (the source code lives here)
 
-|
-|----data
-|    (the train/test data lives here)
-|
-|
-|----tf_logs
-     (the TensorBoard logs lives here)
+----data (the train/test data lives here)
+
+----tf_logs (the TensorBoard logs lives here)
 
 Download the cats vs. dogs dataset from [here](https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition/data) and extract into a folder called *train* under the *data* folder.
 
@@ -68,7 +64,7 @@ In a terminal:
 python3 train.py 
 ```
 
-
+### Fine-Tune
 
 ## Release History
 
@@ -79,7 +75,7 @@ python3 train.py
 
 ## Get in touch
 
-Dries Cronje - [@dries139](twitter.com/dries139) - dries.cronje@outlook.com
+Dries Cronje | [@dries139](twitter.com/dries139) | dries.cronje@outlook.com
 
 
 
