@@ -20,13 +20,15 @@ The idea is to fine-tune a model trained on a large publicly available data set.
 
 ## Using the code
 
-Dependencies:
+### Dependencies:
 
 * Python 3.5
 * numpy
 * scikit-learn
 * matplotlib
 * tensorflow (1.1)
+
+### Folder structure:
 
 Create the following folder structure:
 
@@ -43,20 +45,21 @@ transfer-learning
 
 Download the cats vs. dogs dataset from [here](https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition/data) and extract into a folder called *train* under the *data* folder.
 
-Train custom model:
+### Train custom model:
+
 * Start Tensorboard
 
-        In a terminal:
+In a terminal:
 
-        ```tensorboard --logdir tf_logs/
-        ```
+```tensorboard --logdir tf_logs/
+```
 
 * Train the model:
 
-        In a terminal:
+In a terminal:
 
-        ```python3 train.py 
-        ```
+```python3 train.py 
+```
 
 
 
