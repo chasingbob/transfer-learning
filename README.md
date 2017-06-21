@@ -1,7 +1,7 @@
 # transfer-learning
 > Exploring ways to learn with the least amount of labelled data by taking advantage of transfer-learning techniques.
 
-I've set myself the challenge to classify images of my dogs using the least amount of training photos. There 
+I've set myself the challenge to classify images of my dogs using the least amount of training photos using the latest in transfer-learning techniques. 
 
 ### Meet the dogs
 
@@ -41,18 +41,20 @@ transfer-learning
 |----tf_logs
      (the TensorBoard logs lives here)
 
-Download the cats vs. dogs dataset from [here](https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition/data) and extract into a folder called train under the data folder.
+Download the cats vs. dogs dataset from [here](https://www.kaggle.com/c/dogs-vs-cats-redux-kernels-edition/data) and extract into a folder called *train* under the *data* folder.
 
 Train custom model:
 * Start Tensorboard
 
         In a terminal:
+
         ```tensorboard --logdir tf_logs/
         ```
 
 * Train the model:
 
         In a terminal:
+
         ```python3 train.py 
         ```
 
