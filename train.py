@@ -61,7 +61,7 @@ for f in dog_files[:10500]:
 file_count = count
         
 # test-train split   
-X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.05, random_state=43)
+X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.04, random_state=43)
 X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=97)
 print('Train/Val/Test split:')
 print('X_train: {} {}'.format(X_train.shape[0], X_train.shape))
@@ -90,18 +90,18 @@ def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
 with tf.name_scope('model'):
     convmax1 = conv_maxpool(inputs=X, num_filters=32, name='conv-max-1')
     convmax2 = conv_maxpool(inputs=convmax1, num_filters=64, name='conv-max-2')
-    convmax3 = conv_maxpool(inputs=convmax2, num_filters=64, name='conv-max-3')
-    convmax4 = conv_maxpool(inputs=convmax3, num_filters=64, name='conv-max-4')
-    convmax5 = conv_maxpool(inputs=convmax4, num_filters=32, name='conv-max-5')
-    convmax6 = conv_maxpool(inputs=convmax5, num_filters=64, name='conv-max-6')
+    convmax3 = conv_maxpool(inputs=convmax2, num_filters=128, name='conv-max-3')
+    convmax4 = conv_maxpool(inputs=convmax3, num_filters=128, name='conv-max-4')
+    #convmax5 = conv_maxpool(inputs=convmax4, num_filters=128, name='conv-max-5')
+    #convmax6 = conv_maxpool(inputs=convmax5, num_filters=128, name='conv-max-6')
 
-    print(convmax6.shape)
+    print('Convmax 4 shape: {}'.format(convmax4.shape))
 
     with tf.name_scope('flat'):
-        pool6_flat = tf.reshape(convmax6, shape=[-1, 64 * 2 * 2])
+        pool_flat = tf.reshape(convmax4, shape=[-1, 128 * 8 * 8])
 
     with tf.name_scope('fc-1'):
-        dense = tf.layers.dense(inputs=pool6_flat, units=1024, activation=tf.nn.relu)
+        dense = tf.layers.dense(inputs=pool_flat, units=1024, activation=tf.nn.relu)
     with tf.name_scope('drop-out-1'):
         dropout = tf.layers.dropout(inputs=dense, rate=0.5)
 
@@ -182,8 +182,8 @@ def train():
 
                 if temp_acc > prev_best:
                     print('... save')
-                    prev_best = acc_test
-                    save_path = saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(epoch, acc_test))
+                    prev_best = temp_acc
+                    save_path = saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(epoch, temp_acc))
 
 
 def load_model():
