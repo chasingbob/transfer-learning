@@ -51,14 +51,16 @@ Download the cats vs. dogs dataset from [here](https://www.kaggle.com/c/dogs-vs-
 
 In a terminal:
 
-```tensorboard --logdir tf_logs/
+```
+tensorboard --logdir tf_logs/
 ```
 
 * Train the model:
 
 In a terminal:
 
-```python3 train.py 
+```
+python3 train.py 
 ```
 
 
