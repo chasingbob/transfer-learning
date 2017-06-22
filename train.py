@@ -20,54 +20,53 @@ def fetch_batch(X, iteration, batch_size):
     j = iteration * batch_size + batch_size
     return X[i:j]
 
-data_path = './data/train'
+def load_data():
+    data_path = './data/train'
 
-cat_files_path = os.path.join(data_path, 'cat.*.jpg')
-dog_files_path = os.path.join(data_path, 'dog.*.jpg')
+    cat_files_path = os.path.join(data_path, 'cat.*.jpg')
+    dog_files_path = os.path.join(data_path, 'dog.*.jpg')
 
-cat_files = sorted(glob(cat_files_path))
-dog_files = sorted(glob(dog_files_path))
+    cat_files = sorted(glob(cat_files_path))
+    dog_files = sorted(glob(dog_files_path))
 
-file_count = len(cat_files) + len(dog_files)
-print(file_count)
+    file_count = len(cat_files) + len(dog_files)
+    print(file_count)
 
-image_size = 128
+    image_size = 128
 
-file_count = 4000
-allX = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
-ally = np.zeros(file_count)
-count = 0
-for f in cat_files[:2000]:
-    try:
-        img = io.imread(f)
-        new_img = imresize(img, (image_size, image_size, 3))
-        new_img = np.array(new_img) / 255.
-        allX[count] = new_img
-        ally[count] = 0
-        count += 1
-    except:
-        continue
-
-for f in dog_files[:2000]:
-    try:
-        img = io.imread(f)
+    file_count = 4000
+    allX = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
+    ally = np.zeros(file_count)
+    count = 0
+    for f in cat_files[:2000]:
+        try:
+            img = io.imread(f)
             new_img = imresize(img, (image_size, image_size, 3))
-        new_img = np.array(new_img) / 255.
-        allX[count] = np.array(new_img)
-        ally[count] = 1
-        count += 1
-    except:
-        continue
-        
-file_count = count
-        
-# test-train split   
-X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.5, random_state=43)
-X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=97)
-print('Train/Val/Test split:')
-print('X_train: {} {}'.format(X_train.shape[0], X_train.shape))
-print('X_val: {} {}'.format(X_val.shape[0], X_val.shape))
-print('X_test: {} {}'.format(X_test.shape[0], X_test.shape))
+            new_img = np.array(new_img) / 255.
+            allX[count] = new_img
+            ally[count] = 0
+            count += 1
+        except:
+            continue
+
+    for f in dog_files[:2000]:
+        try:
+            img = io.imread(f)
+                new_img = imresize(img, (image_size, image_size, 3))
+            new_img = np.array(new_img) / 255.
+            allX[count] = np.array(new_img)
+            ally[count] = 1
+            count += 1
+        except:
+            continue
+    return allX, ally
+            
+    file_count = count
+            
+    # test-train split   
+    
+
+    return X_tr
 
 now = datetime.utcnow().strftime('%Y%m%d%H%M%S')
 root_path = 'tf_logs'
@@ -96,6 +95,15 @@ def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
 @click.option('--batch_size', default=16, help='number of images to go into each training batch')
 def train(epochs, batch_size):
     print('Start Training...')
+
+    allX, ally = load_data()
+
+    X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.5, random_state=43)
+    X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=97)
+    print('Train/Val/Test split:')
+    print('X_train: {} {}'.format(X_train.shape[0], X_train.shape))
+    print('X_val: {} {}'.format(X_val.shape[0], X_val.shape))
+    print('X_test: {} {}'.format(X_test.shape[0], X_test.shape))
 
     with tf.name_scope('placeholders'):
         X = tf.placeholder(tf.float32, shape=[None, image_size, image_size, 3], name="X")
