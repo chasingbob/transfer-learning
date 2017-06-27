@@ -25,7 +25,7 @@ def get_img_variations(img, label):
         label: the associated label
 
     """
-    X_images = [], y_images = []
+    X_images = []; y_images = []
     X_images.append(img), 
     y_images.append(label)
 
@@ -135,7 +135,7 @@ def fetch_files(folder_name, label=0):
     path = os.path.join(data_path, folder_name, '*.jpg')
     files = sorted(glob(path))
 
-    X = [], y = []
+    X = []; y = []
     for f in files:
         try:
             img = io.imread(f)
@@ -157,7 +157,7 @@ def load_data():
     x3, y3 = fetch_files(folder_name = 'bella', label=2)
     x4, y4 = fetch_files(folder_name = 'pablo', label=3)
 
-    X = [], y = []
+    X = []; y = []
 
     for _x, _y in zip(x1, y1):
         X.append(_x)
@@ -254,7 +254,7 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
 
     print('Create new top layers')
     with tf.name_scope('new-model'):
-        convmax5 = conv_maxpool(inputs=convmax_stop, num_filters=246, name='conv-max-5')
+        convmax5 = conv_maxpool(inputs=convmax_stop, num_filters=256, name='conv-max-5')
         print('conv-max-5: {}'.format(convmax5.shape))
 
         with tf.name_scope('flat'):
