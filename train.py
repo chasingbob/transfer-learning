@@ -32,13 +32,11 @@ def load_data(image_size=128):
     file_count = len(cat_files) + len(dog_files)
     print(file_count)
 
-    image_size = 128
-
-    file_count = 4000
+    file_count = 20000
     allX = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
     ally = np.zeros(file_count)
     count = 0
-    for f in cat_files[:2000]:
+    for f in cat_files[:10000]:
         try:
             img = io.imread(f)
             new_img = imresize(img, (image_size, image_size, 3))
@@ -49,7 +47,7 @@ def load_data(image_size=128):
         except:
             continue
 
-    for f in dog_files[:2000]:
+    for f in dog_files[:10000]:
         try:
             img = io.imread(f)
             new_img = imresize(img, (image_size, image_size, 3))
