@@ -152,8 +152,10 @@ def train(epochs, batch_size, image_size):
     print('X_test: {} {}'.format(X_test.shape[0], X_test.shape))
 
     with tf.name_scope('placeholders'):
-        X = tf.placeholder(tf.float32, shape=[None, image_size, image_size, 3], name="X")
-        y = tf.placeholder(tf.int32, shape=[None], name="y")
+        with tf.name_scope('X'):
+            X = tf.placeholder(tf.float32, shape=[None, image_size, image_size, 3], name="X")
+        with tf.name_scope('y'):
+            y = tf.placeholder(tf.int32, shape=[None], name="y")
 
     with tf.name_scope('model'):
         convmax1 = conv_maxpool(inputs=X, num_filters=32, name='conv-max-1')

@@ -18,12 +18,20 @@ root_logdir = "tf_logs"
 data_path = './data/dogs'
 
 def get_img_variations(img, label):
-    X_images = []
-    X_images.append(img)
-    y_images = []
+    """Generate variations to the input image used by the augmentation step
+
+    # Args:
+        img: input image used to generate variations of
+        label: the associated label
+
+    """
+    X_images = [], y_images = []
+    X_images.append(img), 
     y_images.append(label)
 
     tmp_list = []
+
+    # Flip left-right
     for _img in X_images:
         tmp_list.append( (np.fliplr(_img), label) )
 
@@ -47,8 +55,8 @@ def get_img_variations(img, label):
         X_images.append(_x)
         y_images.append(_y)
     
+    # change image contrast
     tmp_list[:] = []
-
     for _img in X_images:
         tmp_list.append( (exposure.rescale_intensity(_img, in_range=(rnd.uniform(0.0, 0.5), rnd.uniform(0.5, 1.0))), label) )
 
@@ -59,22 +67,42 @@ def get_img_variations(img, label):
     return X_images, y_images
 
 def list_to_np(images, labels, image_size=128):
+    """Convert list to numpy array and process
+
+    # Args:
+        images: the list of images to convert
+        labels: the associated labels
+        image_size: the desired width/height of each image
+
+    """
+
     assert len(images) == len(labels)
 
-    _X = np.zeros((len(images), image_size, image_size, 3), dtype='float64')
-    _y = np.zeros((len(labels),))
+    X = np.zeros((len(images), image_size, image_size, 3), dtype='float64')
+    y = np.zeros((len(labels),))
 
     count = 0
     for img, label in zip(images, labels):
         img = imresize(img, (image_size, image_size, 3))
         img = np.array(img) / 255.
-        _X[count] = img
-        _y[count] = label
+        X[count] = img
+        y[count] = label
         count += 1
 
-    return _X, _y
+    return X, y
 
 def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
+    """Prepare a batch for training
+
+    # Args
+        X: list of images
+        y: list of labels
+        iteration: number of step to be done
+        batch_size: how many images to prepare
+        image_size: the desired width/height of each image
+        use_augmentation: whether to generate variations or not
+
+    """
     i = iteration * batch_size
     j = iteration * batch_size + batch_size
     if use_augmentation==True:
@@ -87,8 +115,6 @@ def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
                 tmp_X.append(_tmp_X)
                 tmp_y.append(_tmp_y)
 
-        #print(len(tmp_X))
-        
         _X, _y = list_to_np(tmp_X, tmp_y, image_size)
 
         return _X, _y
@@ -97,59 +123,74 @@ def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
 
         return _X, _y
 
-def fetch_files2(dog_name, image_size=128, label=0):
-    path = os.path.join(data_path, dog_name, '*.jpg')
+def fetch_files(folder_name, label=0):
+    """Fetch all image files in specified folder
+
+    # Args:
+        folder_name: name of folder
+        label: class label associated with images in folder
+
+    """
+
+    path = os.path.join(data_path, folder_name, '*.jpg')
     files = sorted(glob(path))
 
-    _X = []
-    _y = []
-    count = 0
+    X = [], y = []
     for f in files:
         try:
             img = io.imread(f)
-            _X.append(img)
-            _y.append(label)
-            count += 1
+            X.append(img)
+            y.append(label)
         except:
             continue
-    return _X, _y
+    return X, y
 
 def load_data():
-    print('Load and process images...')
-    x1, y1 = fetch_files2(dog_name = 'bastian', label=0)
-    x2, y2 = fetch_files2(dog_name = 'grace', label=1)
-    x3, y3 = fetch_files2(dog_name = 'bella', label=2)
-    x4, y4 = fetch_files2(dog_name = 'pablo', label=3)
+    """Load all images and labels
 
-    _X = []
-    _y = []
+    # Args:
 
-    for x, y in zip(x1, y1):
-        _X.append(x)
-        _y.append(y)
+    """
+    print('Load images...')
+    x1, y1 = fetch_files(folder_name = 'bastian', label=0)
+    x2, y2 = fetch_files(folder_name = 'grace', label=1)
+    x3, y3 = fetch_files(folder_name = 'bella', label=2)
+    x4, y4 = fetch_files(folder_name = 'pablo', label=3)
 
-    for x, y in zip(x2, y2):
-        _X.append(x)
-        _y.append(y)
+    X = [], y = []
 
-    for x, y in zip(x3, y3):
-        _X.append(x)
-        _y.append(y)
+    for _x, _y in zip(x1, y1):
+        X.append(_x)
+        y.append(_y)
 
-    for x, y in zip(x4, y4):
-        _X.append(x)
-        _y.append(y)
+    for _x, _y in zip(x2, y2):
+        X.append(_x)
+        y.append(_y)
 
-    return _X, _y
+    for _x, _y in zip(x3, y3):
+        X.append(_x)
+        y.append(_y)
 
+    for _x, _y in zip(x4, y4):
+        X.append(_x)
+        y.append(_y)
 
+    return X, y
 
 def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
+    """TensorFlow helper method to create a conv layer followed by a maxpool layer
+
+    # Args:
+        inputs: input tensor
+        num_filters: how many convolutional filters to create
+        name: TensorFlow name_scope name
+
+    """
     with tf.name_scope(name):
         conv = tf.layers.conv2d(
             inputs=inputs,
             filters=num_filters,
-            kernel_size=[5, 5],
+            kernel_size=[3, 3],
             padding="same",
             activation=tf.nn.relu)
 
@@ -165,8 +206,21 @@ def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
 @click.option('--feedback_step', default=50, help='write to tensorboard every n-th step')
 @click.option('--use_augmentation', default=True, help='increase image pool by using augmentation')
 def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
+    """Main method that controls the model training
+
+    # Args:
+        model_path: where to load base model
+        epochs: how many epochs to train for
+        batch_size: number of images in training batch
+        image_size: widht/height of image
+        learning_rate: rate optimzer is learning at
+        feedback_step: how often to give feedback to screen and TensorBoard
+        use_augmentation: whether to increase training samples by generating variations
+
+    """
     print('Fine tuning...')
 
+    # Fetch all data, and split in train/validation/test sets
     X_data, y_data = load_data()
 
     X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.27, random_state=26)
@@ -182,6 +236,7 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
 
     tf.reset_default_graph()
     
+    # Load tensorflow graph
     saver = tf.train.import_meta_graph(model_path)
     # Access the graph
     #for op in tf.get_default_graph().get_operations():
@@ -191,21 +246,19 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
     X = tf.get_default_graph().get_tensor_by_name("placeholders/X:0")
     y = tf.get_default_graph().get_tensor_by_name("placeholders/y:0")
 
-    # get 4th hidden layer
-    print('Get conv-max-4...')
+    # Where we want to start fine tuning
     convmax4 = tf.get_default_graph().get_tensor_by_name("model/conv-max-4/MaxPool:0")
 
-    # This will freeze all the layers upto convmax5
+    # This will freeze all the layers upto convmax4
     convmax_stop = tf.stop_gradient(convmax4)
-    print('convmax_stop: {}'.format(convmax_stop.shape))
 
     print('Create new top layers')
     with tf.name_scope('new-model'):
-        convmax5 = conv_maxpool(inputs=convmax_stop, num_filters=128, name='conv-max-5')
+        convmax5 = conv_maxpool(inputs=convmax_stop, num_filters=246, name='conv-max-5')
         print('conv-max-5: {}'.format(convmax5.shape))
 
         with tf.name_scope('flat'):
-            new_flat = tf.reshape(convmax5, shape=[-1, 128 * 4 * 4])
+            new_flat = tf.reshape(convmax5, shape=[-1, 256 * 4 * 4])
         with tf.name_scope('fc-1'):
             fc1 = tf.layers.dense(inputs=new_flat, units=1024, activation=tf.nn.relu)
         with tf.name_scope('fc-2'):
@@ -238,18 +291,14 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
         train_file_writer = tf.summary.FileWriter('tf_logs/train', tf.get_default_graph())
 
     init = tf.global_variables_initializer()
-    #new_saver = tf.train.Saver()
     step = 0
     print('Session open...')
     with tf.Session() as sess:
         init.run()
-
         for epoch in range(epochs):
             for iteration in range(len(X_train) // batch_size):
                 
                 X_batch, y_batch = fetch_batch(X_train, y_train, iteration, batch_size, image_size)
-                #print('X_batch: {} y_batch: {}'.format(X_batch.shape, y_batch.shape))
-                
                 sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
 
                 step += 1
@@ -258,52 +307,13 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
                     val_acc_str = acc_summary.eval(feed_dict={X: X_val, y: y_val})
                     train_file_writer.add_summary(train_acc_str, step)
                     val_file_writer.add_summary(val_acc_str, step)
-                    accuracy_val = accuracy.eval(feed_dict={X: X_val,y: y_val})
-                    accuracy_test = accuracy.eval(feed_dict={X: X_test, y: y_test})
-                    print('{}-{} Val acc: {} Test acc: {}'.format(epoch, step,accuracy_val, accuracy_test))
+                    acc_val = accuracy.eval(feed_dict={X: X_val,y: y_val})
+                    acc_train = accuracy.eval(feed_dict={X: X_batch,y: y_batch})
+                    print('{}-{} Train acc: {} Val acc: {}'.format(epoch, step,acc_train, acc_val))
 
         # Calc accuracy against test set
         accuracy_test = accuracy.eval(feed_dict={X: X_test, y: y_test})
         print('Test accuracy: {}'.format(accuracy_test))
-
-
-def test_predict():
-# visualize predictions
-    fig=plt.figure()
-    fig.set_figheight(18)
-    fig.set_figwidth(18)
-    
-    start = rnd.randint(0, 25)
-    for num,img_data in enumerate(X_val[start:start+25]):
-        label = np.zeros((1,1))
-        label[0] = Y_test[num + start]
-        
-        _tmp = np.zeros((1, 128, 128, 3), dtype='float32')
-        _tmp[0] = img_data
-    
-        predict = correct.eval(feed_dict={X:_tmp, y:label[0]})
-        print('Predict: {} Actual: {}'.format(predict, label[0]))
-    
-        _sub = fig.add_subplot(5,5,num+1)
-    
-        str_label = ''
-        if predict:
-            if label[0] == 0:
-                str_label = 'cat'
-            else:
-                str_label = 'dog'
-        else:
-            if label[0] == 0:
-                str_label = 'dog*'
-            else:
-                str_label = 'cat*'
-        
-    
-        _sub.imshow(img_data)
-        plt.title(str_label, fontsize=18)
-        _sub.axes.get_xaxis().set_visible(False)
-        _sub.axes.get_yaxis().set_visible(False)
-    plt.show()
 
 
 
