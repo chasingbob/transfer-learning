@@ -67,8 +67,7 @@ root_path = 'tf_logs'
 logdir = '{}/run-{}/'.format(root_path, now)
 
 
-
-def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
+def conv(inputs, num_filters=32, name='conv-maxpool'):
     with tf.name_scope(name):
         conv = tf.layers.conv2d(
             inputs=inputs,
@@ -76,8 +75,11 @@ def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
             kernel_size=[3, 3],
             padding="same",
             activation=tf.nn.relu)
+        return conv
 
-        pool = tf.nn.max_pool(conv, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID")
+def maxpool(input, name='maxpool'):
+    with tf.name_scope(name):
+        pool = tf.nn.max_pool(input, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID")
         return pool
 
 def load_model():
@@ -144,7 +146,7 @@ def train(epochs, batch_size, image_size):
 
     allX, ally = load_data(image_size=image_size)
 
-    X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.5, random_state=43)
+    X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.2, random_state=43)
     X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=97)
     print('Train/Val/Test split:')
     print('X_train: {} {}'.format(X_train.shape[0], X_train.shape))
@@ -158,20 +160,44 @@ def train(epochs, batch_size, image_size):
             y = tf.placeholder(tf.int32, shape=[None], name="y")
 
     with tf.name_scope('model'):
-        convmax1 = conv_maxpool(inputs=X, num_filters=32, name='conv-max-1')
-        convmax2 = conv_maxpool(inputs=convmax1, num_filters=64, name='conv-max-2')
-        convmax3 = conv_maxpool(inputs=convmax2, num_filters=128, name='conv-max-3')
-        convmax4 = conv_maxpool(inputs=convmax3, num_filters=128, name='conv-max-4')
+        # layer 1
+        conv1 = conv(inputs=X, num_filters=64, name='conv-1')
+        conv2 = conv(inputs=conv1, num_filters=64, name='conv-2')
+        pool1 = maxpool(inputs=conv2, name='maxpool-1')
 
-        print('Convmax 4 shape: {}'.format(convmax4.shape))
+        # layer 2 
+        conv3 = conv(inputs=pool1, num_filters=128, name='conv-3')
+        conv4 = conv(inputs=conv3, num_filters=128, name='conv-4')
+        pool2 = maxpool(inputs=conv4, name='maxpool-2')
+
+        # layer 3 
+        conv5 = conv(inputs=pool2, num_filters=256, name='conv-5')
+        conv6 = conv(inputs=conv5, num_filters=256, name='conv-6')
+        pool3 = maxpool(inputs=conv6, name='maxpool-3')
+
+        # layer 4 
+        conv7 = conv(inputs=pool3, num_filters=512, name='conv-7')
+        conv8 = conv(inputs=conv7, num_filters=512, name='conv-8')
+        pool4 = maxpool(inputs=conv8, name='maxpool-4')
+
+        # layer 5 
+        conv9 = conv(inputs=pool4, num_filters=512, name='conv-9')
+        conv10 = conv(inputs=conv9, num_filters=512, name='conv-10')
+        pool5 = maxpool(inputs=conv10, name='maxpool-5')
+
+        print('pool5 shape: {}'.format(pool5.shape))
 
         with tf.name_scope('flat'):
-            pool_flat = tf.reshape(convmax4, shape=[-1, 128 * 8 * 8])
+            pool_flat = tf.reshape(pool5, shape=[-1, 128 * 8 * 8])
 
         with tf.name_scope('fc-1'):
-            dense = tf.layers.dense(inputs=pool_flat, units=1024, activation=tf.nn.relu)
+            fc1 = tf.layers.dense(inputs=pool_flat, units=4096, activation=tf.nn.relu)
+        with tf.name_scope('fc-2'):
+            fc2 = tf.layers.dense(inputs=fc1, units=4096, activation=tf.nn.relu)
+        with tf.name_scope('fc-3'):
+            fc3 = tf.layers.dense(inputs=fc2, units=1000, activation=tf.nn.relu)
         with tf.name_scope('drop-out-1'):
-            dropout = tf.layers.dropout(inputs=dense, rate=0.5)
+            dropout = tf.layers.dropout(inputs=fc3, rate=0.5)
 
         # Logits Layer
         with tf.name_scope('logits-1'):
@@ -249,7 +275,7 @@ def train(epochs, batch_size, image_size):
             test_acc = sess.run(accuracy, feed_dict={X:X_test_batch, y: y_test_batch})
             test_accs.append(test_acc)
     
-        print('Model accuracy against test set: {}'.format(sum(test_accs)/len(test_accs)))
+        print('Test acc: {}'.format(sum(test_accs)/len(test_accs)))
 
         test_predict_visual(X_test, y_test, correct, X, y, image_size)
 

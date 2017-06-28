@@ -1,4 +1,5 @@
 # project specific
+*checkpoint*
 data/
 tf_logs/
 *.ckpt.*
