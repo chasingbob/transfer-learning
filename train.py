@@ -52,16 +52,16 @@ def load_data(image_size=128):
     file_count = len(cat_files) + len(dog_files)
 
     file_count = 2500
-    all_X = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
-    all_y = np.zeros(file_count)
+    images = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
+    labels = np.zeros(file_count)
     count = 0
     for filename in cat_files[:1250]:
         try:
             img = io.imread(filename)
             new_img = imresize(img, (image_size, image_size, 3))
             new_img = np.array(new_img) / 255.
-            all_X[count] = new_img
-            all_y[count] = 0
+            images[count] = new_img
+            labels[count] = 0
             count += 1
         except:
             continue
@@ -71,47 +71,43 @@ def load_data(image_size=128):
             img = io.imread(filename)
             new_img = imresize(img, (image_size, image_size, 3))
             new_img = np.array(new_img) / 255.
-            all_X[count] = np.array(new_img)
-            all_y[count] = 1
+            images[count] = np.array(new_img)
+            labels[count] = 1
             count += 1
         except:
             continue
-    return all_X, all_y
+    return images, labels
 
+def test_predict_visual(test_images, test_labels, correct_op, X, y, image_size=128):
+    """Visualise predictions
 
+    # Args:
+        test_images: test images
+        test_labels: labels
+        correct_op: tensorflow op, to test if correct
+        X: tf input tensor
+        y: tf input tensor
+        image_size: size of image in pixels (width=height)
 
-def test_accuracy():
-    print('*** Test acc ***')
-    test_accs = []
-    for i in range(len(X_test) // batch_size):
-        X_test_batch = fetch_batch(X_test, j, batch_size)
-        y_test_batch = fetch_batch(y_test, j, batch_size)
+    """
 
-        test_acc = sess.run(accuracy, feed_dict={X:X_test_batch, y: y_test_batch})
-        test_accs.append(test_acc)
-    
-    print('Model accuracy against test set: {}'.format(sum(test_accs)/len(test_accs)))
-               
-     
-def test_predict_visual(X_test, Y_test, correct_op, X, y, image_size=128):
-# visualize predictions
-    fig=plt.figure()
+    fig = plt.figure()
     fig.set_figheight(18)
     fig.set_figwidth(18)
-    
+
     start = rnd.randint(0, 25)
-    for num,img_data in enumerate(X_test[start:start+25]):
-        label = np.zeros((1,1))
-        label[0] = Y_test[num + start]
-        
+    for num, img_data in enumerate(test_images[start:start+25]):
+        label = np.zeros((1, 1))
+        label[0] = test_labels[num + start]
+
         _tmp = np.zeros((1, image_size, image_size, 3), dtype='float32')
         _tmp[0] = img_data
-    
+
         predict = correct_op.eval(feed_dict={X:_tmp, y:label[0]})
         print('Predict: {} Actual: {}'.format(predict, label[0]))
-    
-        _sub = fig.add_subplot(5,5,num+1)
-    
+
+        _sub = fig.add_subplot(5, 5, num+1)
+
         str_label = ''
         if predict:
             if label[0] == 0:
@@ -123,8 +119,8 @@ def test_predict_visual(X_test, Y_test, correct_op, X, y, image_size=128):
                 str_label = 'dog*'
             else:
                 str_label = 'cat*'
-        
-    
+
+
         _sub.imshow(img_data)
         plt.title(str_label, fontsize=18)
         _sub.axes.get_xaxis().set_visible(False)
@@ -256,7 +252,6 @@ def train(epochs, batch_size, image_size):
                         print('... save')
                         prev_best = temp_acc
                         save_path = saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(epoch, temp_acc))
-            print('Epoch: {}'.format(epoch))
 
         test_accs = []
         for i in range(len(X_test) // batch_size):
@@ -275,4 +270,3 @@ def train(epochs, batch_size, image_size):
     
 
 if __name__ == "__main__":
-    train()

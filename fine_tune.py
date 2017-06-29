@@ -258,8 +258,6 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
         with tf.name_scope('logits-1'):
             new_logits = tf.layers.dense(inputs=new_dropout, units=4)
 
-    print('logits: {}'.format(new_logits.shape))
-    print('labels: {}'.format(y.shape))
     with tf.name_scope("new_loss"):
         xentropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y, logits=new_logits)
         loss = tf.reduce_mean(xentropy, name="loss")
@@ -269,7 +267,7 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
         accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
 
     with tf.name_scope("new_train"):
-        optimizer = tf.train.AdamOptimizer(learning_rate)  
+        optimizer = tf.train.AdamOptimizer(learning_rate)
         training_op = optimizer.minimize(loss)
 
     with tf.name_scope('summary'):
@@ -295,8 +293,8 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
                     val_acc_str = acc_summary.eval(feed_dict={X: X_val, y: y_val})
                     train_file_writer.add_summary(train_acc_str, step)
                     val_file_writer.add_summary(val_acc_str, step)
-                    acc_val = accuracy.eval(feed_dict={X: X_val,y: y_val})
-                    acc_train = accuracy.eval(feed_dict={X: X_batch,y: y_batch})
+                    acc_val = accuracy.eval(feed_dict={X: X_val, y: y_val})
+                    acc_train = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
                     print('{}-{} Train acc: {} Val acc: {}'.format(epoch, step,acc_train, acc_val))
 
         # Calc accuracy against test set
@@ -306,7 +304,7 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
 
 
 if __name__ == "__main__":
-    fine_tune()
+    #fine_tune()
 
 
 
