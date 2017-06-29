@@ -1,3 +1,9 @@
+"""Fine-tune existing model
+
+Fine tune an existing model on a small data set by freezing bottom layers and training on the top layers by using a small learning rate.
+
+"""
+
 import os
 from datetime import datetime
 import random as rnd
@@ -12,6 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 from sklearn.model_selection import train_test_split
+import tf_extensions as tfe
 
 rnd.seed(47)
 root_logdir = "tf_logs"
@@ -44,12 +51,13 @@ def get_img_variations(img, label):
     # random crops
     for _img in X_images:
         w, h, _ = _img.shape
-        from_x = int(rnd.uniform(0.0, 0.25) * w)
-        from_y = int(rnd.uniform(0.0, 0.25) * h)
-        to_x = int((0.75 + rnd.uniform(0.0, 0.25)) * w)
-        to_y = int((0.75 + rnd.uniform(0.0, 0.25)) * h)
+        for i in range(4):
+            from_x = int(rnd.uniform(0.0, 0.25) * w)
+            from_y = int(rnd.uniform(0.0, 0.25) * h)
+            to_x = int((0.5 + rnd.uniform(0.0, 0.25)) * w)
+            to_y = int((0.5 + rnd.uniform(0.0, 0.25)) * h)
 
-        tmp_list.append( (_img[from_y:to_y,from_x:to_x], label) )
+            tmp_list.append( (_img[from_y:to_y,from_x:to_x], label) )
 
     for _x, _y in tmp_list:
         X_images.append(_x)
@@ -58,7 +66,7 @@ def get_img_variations(img, label):
     # change image contrast
     tmp_list[:] = []
     for _img in X_images:
-        tmp_list.append( (exposure.rescale_intensity(_img, in_range=(rnd.uniform(0.0, 0.5), rnd.uniform(0.5, 1.0))), label) )
+        tmp_list.append( (exposure.rescale_intensity(_img, in_range=(rnd.uniform(0.1, 0.5), rnd.uniform(0.5, 0.9))), label) )
 
     for _x, _y in tmp_list:
         X_images.append(_x)
@@ -78,7 +86,7 @@ def list_to_np(images, labels, image_size=128):
 
     assert len(images) == len(labels)
 
-    X = np.zeros((len(images), image_size, image_size, 3), dtype='float64')
+    X = np.zeros((len(images), image_size, image_size, 3), dtype='float32')
     y = np.zeros((len(labels),))
 
     count = 0
@@ -177,29 +185,9 @@ def load_data():
 
     return X, y
 
-def conv_maxpool(inputs, num_filters=32, name='conv-maxpool'):
-    """TensorFlow helper method to create a conv layer followed by a maxpool layer
-
-    # Args:
-        inputs: input tensor
-        num_filters: how many convolutional filters to create
-        name: TensorFlow name_scope name
-
-    """
-    with tf.name_scope(name):
-        conv = tf.layers.conv2d(
-            inputs=inputs,
-            filters=num_filters,
-            kernel_size=[3, 3],
-            padding="same",
-            activation=tf.nn.relu)
-
-        pool = tf.nn.max_pool(conv, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID")
-        return pool
-
 @click.command()
 @click.option('--model_path', default='', help='path to base model')
-@click.option('--epochs', default=3, help='number of epochs to train model')
+@click.option('--epochs', default=10, help='number of epochs to train model')
 @click.option('--batch_size', default=28, help='number of images to go into each training batch')
 @click.option('--image_size', default=128, help='fixed size of image')
 @click.option('--learning_rate', default=1e-3, help='optimizer learning rate')
@@ -223,8 +211,8 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
     # Fetch all data, and split in train/validation/test sets
     X_data, y_data = load_data()
 
-    X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.27, random_state=26)
-    X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size=0.55, random_state=59)
+    X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.25, random_state=23)
+    X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size=0.57, random_state=56)
 
     X_val, y_val = list_to_np(X_val, y_val, image_size)
     X_test, y_test = list_to_np(X_test, y_test, image_size)
@@ -243,28 +231,27 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
     #    print(op.name)
 
     # input/output placeholders
-    X = tf.get_default_graph().get_tensor_by_name("placeholders/X:0")
-    y = tf.get_default_graph().get_tensor_by_name("placeholders/y:0")
+    X = tf.get_default_graph().get_tensor_by_name("placeholders/X/X:0")
+    y = tf.get_default_graph().get_tensor_by_name("placeholders/y/y:0")
 
     # Where we want to start fine tuning
-    convmax4 = tf.get_default_graph().get_tensor_by_name("model/conv-max-4/MaxPool:0")
+    pool4 = tf.get_default_graph().get_tensor_by_name("model/maxpool-4/MaxPool:0")
 
     # This will freeze all the layers upto convmax4
-    convmax_stop = tf.stop_gradient(convmax4)
+    maxpool_stop = tf.stop_gradient(pool4)
 
     print('Create new top layers')
     with tf.name_scope('new-model'):
-        convmax5 = conv_maxpool(inputs=convmax_stop, num_filters=256, name='conv-max-5')
-        print('conv-max-5: {}'.format(convmax5.shape))
+        conv5 = tfe.conv(inputs=maxpool_stop, num_filters=512, name='conv-5')
+        pool5 = tfe.maxpool(inputs=conv5, name='maxpool-5')
+        print('pool5: {}'.format(pool5.shape))
 
         with tf.name_scope('flat'):
-            new_flat = tf.reshape(convmax5, shape=[-1, 256 * 4 * 4])
+            new_flat = tf.reshape(pool5, shape=[-1, 512 * 4 * 4])
         with tf.name_scope('fc-1'):
-            fc1 = tf.layers.dense(inputs=new_flat, units=1024, activation=tf.nn.relu)
-        with tf.name_scope('fc-2'):
-            fc2 = tf.layers.dense(inputs=fc1, units=1024, activation=tf.nn.relu)
+            fc1 = tf.layers.dense(inputs=new_flat, units=1000, activation=tf.nn.relu)
         with tf.name_scope('drop-out-1'):
-            new_dropout = tf.layers.dropout(inputs=fc2, rate=0.5)
+            new_dropout = tf.layers.dropout(inputs=fc1, rate=0.5)
 
         # Logits Layer
         with tf.name_scope('logits-1'):

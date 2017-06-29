@@ -1,3 +1,9 @@
+"""Train base model
+
+Custom train a base model on a large data set
+
+"""
+
 import os
 from datetime import datetime
 import random as rnd
@@ -12,15 +18,29 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 from sklearn.model_selection import train_test_split
+import tf_extensions as tfe
 
 rnd.seed(45)
 
-def fetch_batch(X, iteration, batch_size):
+def fetch_batch(data, iteration, batch_size):
+    """Fetch data batch for next iteration
+
+    # Args:
+        X: data set
+        iteration: training step
+        batch_size: number of samples to return
+    """
     i = iteration * batch_size
     j = iteration * batch_size + batch_size
-    return X[i:j]
+    return data[i:j]
 
 def load_data(image_size=128):
+    """Load all the image files from disk
+
+    # Args:
+        image_size: size of image (width = height)
+
+    """
     data_path = './data/train'
 
     cat_files_path = os.path.join(data_path, 'cat.*.jpg')
@@ -30,60 +50,45 @@ def load_data(image_size=128):
     dog_files = sorted(glob(dog_files_path))
 
     file_count = len(cat_files) + len(dog_files)
-    print(file_count)
 
-    file_count = 20000
-    allX = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
-    ally = np.zeros(file_count)
+    file_count = 2500
+    all_X = np.zeros((file_count, image_size, image_size, 3), dtype='float64')
+    all_y = np.zeros(file_count)
     count = 0
-    for f in cat_files[:10000]:
+    for filename in cat_files[:1250]:
         try:
-            img = io.imread(f)
+            img = io.imread(filename)
             new_img = imresize(img, (image_size, image_size, 3))
             new_img = np.array(new_img) / 255.
-            allX[count] = new_img
-            ally[count] = 0
+            all_X[count] = new_img
+            all_y[count] = 0
             count += 1
         except:
             continue
 
-    for f in dog_files[:10000]:
+    for filename in dog_files[:1250]:
         try:
-            img = io.imread(f)
+            img = io.imread(filename)
             new_img = imresize(img, (image_size, image_size, 3))
             new_img = np.array(new_img) / 255.
-            allX[count] = np.array(new_img)
-            ally[count] = 1
+            all_X[count] = np.array(new_img)
+            all_y[count] = 1
             count += 1
         except:
             continue
-    return allX, ally
-            
-    file_count = count
-            
-
-now = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-root_path = 'tf_logs'
-logdir = '{}/run-{}/'.format(root_path, now)
+    return all_X, all_y
 
 
-def conv(inputs, num_filters=32, name='conv-maxpool'):
-    with tf.name_scope(name):
-        conv = tf.layers.conv2d(
-            inputs=inputs,
-            filters=num_filters,
-            kernel_size=[3, 3],
-            padding="same",
-            activation=tf.nn.relu)
-        return conv
 
-def maxpool(input, name='maxpool'):
-    with tf.name_scope(name):
-        pool = tf.nn.max_pool(input, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID")
-        return pool
+def load_model(session, file_name):
+    """Load model from file
 
-def load_model():
-    saver.restore(sess, './model-9-0.74.ckpt')
+    # Args:
+        session: tensorflow session variable
+        file_name: name of model
+
+    """
+    saver.restore(session, file_name)
 
 def test_accuracy():
     print('*** Test acc ***')
@@ -146,8 +151,8 @@ def train(epochs, batch_size, image_size):
 
     allX, ally = load_data(image_size=image_size)
 
-    X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.2, random_state=43)
-    X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=97)
+    X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.10, random_state=41)
+    X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=99)
     print('Train/Val/Test split:')
     print('X_train: {} {}'.format(X_train.shape[0], X_train.shape))
     print('X_val: {} {}'.format(X_val.shape[0], X_val.shape))
@@ -161,43 +166,31 @@ def train(epochs, batch_size, image_size):
 
     with tf.name_scope('model'):
         # layer 1
-        conv1 = conv(inputs=X, num_filters=64, name='conv-1')
-        conv2 = conv(inputs=conv1, num_filters=64, name='conv-2')
-        pool1 = maxpool(inputs=conv2, name='maxpool-1')
+        conv1 = tfe.conv(inputs=X, num_filters=64, name='conv-1')
+        pool1 = tfe.maxpool(inputs=conv1, name='maxpool-1')
 
         # layer 2 
-        conv3 = conv(inputs=pool1, num_filters=128, name='conv-3')
-        conv4 = conv(inputs=conv3, num_filters=128, name='conv-4')
-        pool2 = maxpool(inputs=conv4, name='maxpool-2')
+        conv2 = tfe.conv(inputs=pool1, num_filters=128, name='conv-2')
+        pool2 = tfe.maxpool(inputs=conv2, name='maxpool-2')
 
         # layer 3 
-        conv5 = conv(inputs=pool2, num_filters=256, name='conv-5')
-        conv6 = conv(inputs=conv5, num_filters=256, name='conv-6')
-        pool3 = maxpool(inputs=conv6, name='maxpool-3')
+        conv3 = tfe.conv(inputs=pool2, num_filters=256, name='conv-3')
+        pool3 = tfe.maxpool(inputs=conv3, name='maxpool-3')
 
         # layer 4 
-        conv7 = conv(inputs=pool3, num_filters=512, name='conv-7')
-        conv8 = conv(inputs=conv7, num_filters=512, name='conv-8')
-        pool4 = maxpool(inputs=conv8, name='maxpool-4')
+        conv4 = tfe.conv(inputs=pool3, num_filters=512, name='conv-4')
+        pool4 = tfe.maxpool(inputs=conv4, name='maxpool-4')
 
-        # layer 5 
-        conv9 = conv(inputs=pool4, num_filters=512, name='conv-9')
-        conv10 = conv(inputs=conv9, num_filters=512, name='conv-10')
-        pool5 = maxpool(inputs=conv10, name='maxpool-5')
-
-        print('pool5 shape: {}'.format(pool5.shape))
+        print('last pool shape: {}'.format(pool4.shape))
 
         with tf.name_scope('flat'):
-            pool_flat = tf.reshape(pool5, shape=[-1, 128 * 8 * 8])
+            pool_flat = tf.reshape(pool4, shape=[-1, 512 * 8 * 8])
 
         with tf.name_scope('fc-1'):
-            fc1 = tf.layers.dense(inputs=pool_flat, units=4096, activation=tf.nn.relu)
-        with tf.name_scope('fc-2'):
-            fc2 = tf.layers.dense(inputs=fc1, units=4096, activation=tf.nn.relu)
-        with tf.name_scope('fc-3'):
-            fc3 = tf.layers.dense(inputs=fc2, units=1000, activation=tf.nn.relu)
+            fc1 = tf.layers.dense(inputs=pool_flat, units=2048, activation=tf.nn.relu)
+        
         with tf.name_scope('drop-out-1'):
-            dropout = tf.layers.dropout(inputs=fc3, rate=0.5)
+            dropout = tf.layers.dropout(inputs=fc1, rate=0.5)
 
         # Logits Layer
         with tf.name_scope('logits-1'):
@@ -238,7 +231,7 @@ def train(epochs, batch_size, image_size):
                 
                 step += 1
                 val_accs = []
-                if step % 10 == 0:
+                if step % 50 == 0:
                     # TensorBoard feedback step
                     val_accs[:] = []
 
