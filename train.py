@@ -80,16 +80,6 @@ def load_data(image_size=128):
 
 
 
-def load_model(session, file_name):
-    """Load model from file
-
-    # Args:
-        session: tensorflow session variable
-        file_name: name of model
-
-    """
-    saver.restore(session, file_name)
-
 def test_accuracy():
     print('*** Test acc ***')
     test_accs = []
@@ -147,11 +137,19 @@ def test_predict_visual(X_test, Y_test, correct_op, X, y, image_size=128):
 @click.option('--batch_size', default=16, help='number of images to go into each training batch')
 @click.option('--image_size', default=128, help='image size in pixels')
 def train(epochs, batch_size, image_size):
-    print('Start Training...')
+    """Main method handling everything around training the model
 
-    allX, ally = load_data(image_size=image_size)
+    # Args:
+        epochs: Number of epochs to train model
+        batch_size: Number of images in each training batch send for training
+        image_size: Image size in pixels (width = height)
 
-    X_train, X_val, Y_train, Y_val = train_test_split(allX, ally, test_size=0.10, random_state=41)
+    """
+    print('Training started...')
+
+    all_X, ally = load_data(image_size=image_size)
+
+    X_train, X_val, Y_train, Y_val = train_test_split(all_X, ally, test_size=0.10, random_state=41)
     X_val, X_test, y_val, y_test = train_test_split(X_val, Y_val, test_size=0.5, random_state=99)
     print('Train/Val/Test split:')
     print('X_train: {} {}'.format(X_train.shape[0], X_train.shape))

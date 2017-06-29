@@ -1,6 +1,7 @@
 """Fine-tune existing model
 
-Fine tune an existing model on a small data set by freezing bottom layers and training on the top layers by using a small learning rate.
+Fine tune an existing model on a small data set by freezing bottom layers and
+training on the top layers by using a small learning rate.
 
 """
 
@@ -35,38 +36,38 @@ def get_img_variations(img, label):
     X_images = []; y_images = []
     X_images.append(img), 
     y_images.append(label)
-
     tmp_list = []
 
     # Flip left-right
     for _img in X_images:
-        tmp_list.append( (np.fliplr(_img), label) )
+        tmp_list.append((np.fliplr(_img), label))
 
     for _x, _y in tmp_list:
         X_images.append(_x)
         y_images.append(_y)
-    
     tmp_list[:] = []
 
     # random crops
     for _img in X_images:
-        w, h, _ = _img.shape
-        for i in range(4):
-            from_x = int(rnd.uniform(0.0, 0.25) * w)
-            from_y = int(rnd.uniform(0.0, 0.25) * h)
-            to_x = int((0.5 + rnd.uniform(0.0, 0.25)) * w)
-            to_y = int((0.5 + rnd.uniform(0.0, 0.25)) * h)
+        width, height, _ = _img.shape
+        for _ in range(2):
+            from_x = int(rnd.uniform(0.0, 0.25) * width)
+            from_y = int(rnd.uniform(0.0, 0.25) * height)
+            to_x = int((0.5 + rnd.uniform(0.0, 0.25)) * width)
+            to_y = int((0.5 + rnd.uniform(0.0, 0.25)) * height)
 
-            tmp_list.append( (_img[from_y:to_y,from_x:to_x], label) )
+            tmp_list.append((_img[from_y:to_y, from_x:to_x], label))
 
     for _x, _y in tmp_list:
         X_images.append(_x)
         y_images.append(_y)
-    
+
     # change image contrast
     tmp_list[:] = []
     for _img in X_images:
-        tmp_list.append( (exposure.rescale_intensity(_img, in_range=(rnd.uniform(0.1, 0.5), rnd.uniform(0.5, 0.9))), label) )
+        tmp_list.append((exposure.rescale_intensity(
+            _img,
+            in_range=(rnd.uniform(0.1, 0.5), rnd.uniform(0.5, 0.9))), label))
 
     for _x, _y in tmp_list:
         X_images.append(_x)
@@ -113,23 +114,21 @@ def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
     """
     i = iteration * batch_size
     j = iteration * batch_size + batch_size
-    if use_augmentation==True:
-        tmp_X = []
-        tmp_y = []
+    if use_augmentation:
+        images = []
+        labels = []
 
         for _x, _y in zip(X[i:j], y[i:j]):
             xs, ys = get_img_variations(_x, _y)
-            for _tmp_X, _tmp_y in zip(xs, ys):
-                tmp_X.append(_tmp_X)
-                tmp_y.append(_tmp_y)
+            for _images, _labels in zip(xs, ys):
+                images.append(_images)
+                labels.append(_labels)
 
-        _X, _y = list_to_np(tmp_X, tmp_y, image_size)
+        return list_to_np(images, labels, image_size)
 
-        return _X, _y
     else:
-        _X, _y = list_to_np(X[i:j], y[i:j], image_size)
+        return list_to_np(X[i:j], y[i:j], image_size)
 
-        return _X, _y
 
 def fetch_files(folder_name, label=0):
     """Fetch all image files in specified folder
@@ -143,15 +142,15 @@ def fetch_files(folder_name, label=0):
     path = os.path.join(data_path, folder_name, '*.jpg')
     files = sorted(glob(path))
 
-    X = []; y = []
+    images = []; labels = []
     for f in files:
         try:
             img = io.imread(f)
-            X.append(img)
-            y.append(label)
+            images.append(img)
+            labels.append(label)
         except:
             continue
-    return X, y
+    return images, labels
 
 def load_data():
     """Load all images and labels
@@ -159,31 +158,33 @@ def load_data():
     # Args:
 
     """
+
     print('Load images...')
-    x1, y1 = fetch_files(folder_name = 'bastian', label=0)
-    x2, y2 = fetch_files(folder_name = 'grace', label=1)
-    x3, y3 = fetch_files(folder_name = 'bella', label=2)
-    x4, y4 = fetch_files(folder_name = 'pablo', label=3)
 
-    X = []; y = []
+    images1, labels1 = fetch_files(folder_name='bastian', label=0)
+    images2, labels2 = fetch_files(folder_name='grace', label=1)
+    images3, labels3 = fetch_files(folder_name='bella', label=2)
+    images4, labels4 = fetch_files(folder_name='pablo', label=3)
 
-    for _x, _y in zip(x1, y1):
-        X.append(_x)
-        y.append(_y)
+    images = []; labels = []
 
-    for _x, _y in zip(x2, y2):
-        X.append(_x)
-        y.append(_y)
+    for _x, _y in zip(images1, labels1):
+        images.append(_x)
+        labels.append(_y)
 
-    for _x, _y in zip(x3, y3):
-        X.append(_x)
-        y.append(_y)
+    for _x, _y in zip(images2, labels2):
+        images.append(_x)
+        labels.append(_y)
 
-    for _x, _y in zip(x4, y4):
-        X.append(_x)
-        y.append(_y)
+    for _x, _y in zip(images3, labels3):
+        images.append(_x)
+        labels.append(_y)
 
-    return X, y
+    for _x, _y in zip(images4, labels4):
+        images.append(_x)
+        labels.append(_y)
+
+    return images, labels
 
 @click.command()
 @click.option('--model_path', default='', help='path to base model')
