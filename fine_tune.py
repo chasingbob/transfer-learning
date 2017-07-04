@@ -193,8 +193,18 @@ def load_data():
 @click.option('--image_size', default=128, help='fixed size of image')
 @click.option('--learning_rate', default=1e-3, help='optimizer learning rate')
 @click.option('--feedback_step', default=50, help='write to tensorboard every n-th step')
-@click.option('--use_augmentation', default=True, help='increase image pool by using augmentation')
-def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
+@click.option('--use_augmentation', is_flag=True, help='increase image pool by using augmentation')
+@click.option('--option', default='train', help='training or inference')
+def fine_tune(option, model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
+    if option == 'inference':
+        visualise_test_predictions(model_path)
+
+    elif option == 'train':
+        train(model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation)
+
+
+
+def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
     """Main method that controls the model training
 
     # Args:
@@ -263,7 +273,7 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
         loss = tf.reduce_mean(xentropy, name="loss")
 
     with tf.name_scope("new_eval"):
-        correct = tf.nn.in_top_k(new_logits, y, 1)
+        correct = tf.nn.in_top_k(new_logits, y, 1, name='correct')
         accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
 
     with tf.name_scope("new_train"):
@@ -277,10 +287,12 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
         train_file_writer = tf.summary.FileWriter('tf_logs/train', tf.get_default_graph())
 
     init = tf.global_variables_initializer()
+    saver = tf.train.Saver()
     step = 0
     print('Session open...')
     with tf.Session() as sess:
         init.run()
+        best_acc = 0.0
         for epoch in range(epochs):
             for iteration in range(len(X_train) // batch_size):
 
@@ -297,15 +309,101 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
                     acc_train = accuracy.eval(feed_dict={X: X_batch, y: y_batch})
                     print('{}-{} Train acc: {} Val acc: {}'.format(epoch, step,acc_train, acc_val))
 
+                    if acc_val > best_acc:
+                        print('... save')
+                        best_acc = acc_val
+                        saver.save(sess, "./finetune-model-{}-{:2.2f}.ckpt".format(epoch, acc_val))
+
         # Calc accuracy against test set
         accuracy_test = accuracy.eval(feed_dict={X: X_test, y: y_test})
         print('Test accuracy: {}'.format(accuracy_test))
+
+def visualise_test_predictions(file_name):
+
+    tf.reset_default_graph()
+    
+    # Load tensorflow graph
+    saver = tf.train.import_meta_graph(file_name)
+
+     # input/output placeholders
+    X = tf.get_default_graph().get_tensor_by_name("placeholders/X/X:0")
+    y = tf.get_default_graph().get_tensor_by_name("placeholders/y/y:0")
+
+    for op in tf.get_default_graph().get_operations():
+        print(op.name)
+
+    correct_op = tf.get_default_graph().get_tensor_by_name("new_eval")
+
+    fig = plt.figure()
+    fig.set_figheight(18)
+    fig.set_figwidth(18)
+
+    # Load model
+    saver = tf.train.Saver()
+    init = tf.global_variables_initializer()
+
+    X_data, y_data = load_data()
+    X_train, X_test, y_train, y_test = train_test_split(X_data, y_data, test_size=0.5, random_state=5)
+    X_test, y_test = list_to_np(X_test, y_test, 128)
+
+    X_test = X_test[:25]
+    y_test = y_test[:25]
+
+    # Init session
+    with tf.Session() as sess:
+        sess.run(init)
+
+        saver.restore(sess, file_name)
+
+        for num, img_data in enumerate(X_test):
+            label = np.zeros((1, 1))
+            label[0] = y_test[num]
+
+            _tmp = np.zeros((1, 128, 128, 3), dtype='float32')
+            _tmp[0] = img_data
+
+            predict = correct_op.eval(feed_dict={X:_tmp, y:label[0]})
+            print('Predict: {} Actual: {}'.format(predict, label[0]))
+
+            _sub = fig.add_subplot(5, 5, num+1)
+
+            str_label = ''
+            if predict:
+                if label[0] == 0:
+                    str_label = 'Bastian'
+                if label[0] == 1:
+                    str_label = 'Grace'
+                if label[0] == 2:
+                    str_label = 'Bella'
+                else:
+                    str_label = 'Pablo'
+            else:
+                if label[0] == 0:
+                    str_label = 'Bastian**'
+                if label[0] == 1:
+                    str_label = 'Grace**'
+                if label[0] == 2:
+                    str_label = 'Bella**'
+                else:
+                    str_label = 'Pablo**'
+
+
+        _sub.imshow(img_data)
+        plt.title(str_label, fontsize=18)
+        _sub.axes.get_xaxis().set_visible(False)
+        _sub.axes.get_yaxis().set_visible(False)
+    plt.show()
+
+
+    # Run predictions
+
+    # Visualise predictions
+
 
 
 
 if __name__ == "__main__":
     fine_tune()
-
 
 
 
