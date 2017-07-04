@@ -213,6 +213,7 @@ def train(epochs, batch_size, image_size):
     saver = tf.train.Saver()
     
     step = 0
+    val_accs = []
     prev_best = 0
     with tf.Session() as sess:
         init.run()
@@ -224,7 +225,7 @@ def train(epochs, batch_size, image_size):
                 sess.run(training_op, feed_dict={X: X_train_batch, y: Y_train_batch})
                 
                 step += 1
-                val_accs = []
+                
                 if step % 50 == 0:
                     # TensorBoard feedback step
                     val_accs[:] = []
@@ -260,13 +261,13 @@ def train(epochs, batch_size, image_size):
 
             test_acc = sess.run(accuracy, feed_dict={X:X_test_batch, y: y_test_batch})
             test_accs.append(test_acc)
-    
+
         print('Test acc: {}'.format(sum(test_accs)/len(test_accs)))
 
         test_predict_visual(X_test, y_test, correct, X, y, image_size)
 
     val_file_writer.close()
 
-    
 
 if __name__ == "__main__":
+    train(5, 128, image_size=128)
