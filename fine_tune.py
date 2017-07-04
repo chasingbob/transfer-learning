@@ -50,11 +50,11 @@ def get_img_variations(img, label):
     # random crops
     for _img in X_images:
         width, height, _ = _img.shape
-        for _ in range(2):
+        for _ in range(4):
             from_x = int(rnd.uniform(0.0, 0.25) * width)
             from_y = int(rnd.uniform(0.0, 0.25) * height)
-            to_x = int((0.5 + rnd.uniform(0.0, 0.25)) * width)
-            to_y = int((0.5 + rnd.uniform(0.0, 0.25)) * height)
+            to_x = int((0.75 + rnd.uniform(0.0, 0.25)) * width)
+            to_y = int((0.75 + rnd.uniform(0.0, 0.25)) * height)
 
             tmp_list.append((_img[from_y:to_y, from_x:to_x], label))
 
@@ -212,8 +212,8 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
     # Fetch all data, and split in train/validation/test sets
     X_data, y_data = load_data()
 
-    X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.25, random_state=23)
-    X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size=0.57, random_state=56)
+    X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.25, random_state=3)
+    X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size=0.57, random_state=51)
 
     X_val, y_val = list_to_np(X_val, y_val, image_size)
     X_test, y_test = list_to_np(X_test, y_test, image_size)
@@ -283,7 +283,7 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
         init.run()
         for epoch in range(epochs):
             for iteration in range(len(X_train) // batch_size):
-                
+
                 X_batch, y_batch = fetch_batch(X_train, y_train, iteration, batch_size, image_size)
                 sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
 
@@ -304,7 +304,7 @@ def fine_tune(model_path, epochs, batch_size, image_size, learning_rate, feedbac
 
 
 if __name__ == "__main__":
-    #fine_tune()
+    fine_tune()
 
 
 
