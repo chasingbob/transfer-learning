@@ -3,7 +3,7 @@
 
 '''
 
-def fetch_batch(data, iteration, batch_size):
+def fetch_batch(data_X, data_Y, iteration, batch_size):
     '''Fetch data batch for next iteration
 
     # Args:
@@ -13,4 +13,4 @@ def fetch_batch(data, iteration, batch_size):
     '''
     i = iteration * batch_size
     j = iteration * batch_size + batch_size
-    return data[i:j]
+    return data_X[i:j], data_Y[i:j]
