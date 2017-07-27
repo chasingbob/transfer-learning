@@ -34,13 +34,13 @@ class Model:
             self.pool3 = tfe.maxpool(inputs=self.conv3, name='maxpool-3')
 
             # layer 4
-            self.conv4 = tfe.conv(inputs=self.pool3, num_filters=512, name='conv-4')
+            self.conv4 = tfe.conv(inputs=self.pool3, num_filters=256, name='conv-4')
             self.pool4 = tfe.maxpool(inputs=self.conv4, name='maxpool-4')
 
             # print('last pool shape: {}'.format(self.pool4.shape))
 
             with tf.name_scope('flat'):
-                self.pool_flat = tf.reshape(self.pool4, shape=[-1, 512 * 8 * 8])
+                self.pool_flat = tf.reshape(self.pool4, shape=[-1, 256 * 8 * 8])
 
             with tf.name_scope('fc-1'):
                 self.fc1 = tf.layers.dense(inputs=self.pool_flat, units=2048, activation=tf.nn.relu)
@@ -119,9 +119,7 @@ class Model:
 
         for epoch in range(num_epochs):
             for i in range(len(X_train) // batch_size):
-                X_train_batch = utils.fetch_batch(X_train, i, batch_size)
-                Y_train_batch = utils.fetch_batch(Y_train, i, batch_size)
-
+                X_train_batch, Y_train_batch = utils.fetch_batch(X_train, Y_train, i, batch_size)
                 sess.run(self.training_op, feed_dict={self.X: X_train_batch, self.y: Y_train_batch})
 
                 step += 1
@@ -130,8 +128,7 @@ class Model:
                     val_accs[:] = []
 
                     for j in range(len(X_val) // batch_size):
-                        X_val_batch = utils.fetch_batch(X_val, j, batch_size)
-                        y_val_batch = utils.fetch_batch(y_val, j, batch_size)
+                        X_val_batch, y_val_batch = utils.fetch_batch(X_val, y_val, j, batch_size)
 
                         val_acc = sess.run(self.accuracy, feed_dict={self.X:X_val_batch, self.y: y_val_batch})
                         val_accs.append(val_acc)
@@ -150,7 +147,6 @@ class Model:
 
                     if temp_acc > prev_best:
                         prev_best = temp_acc
-                        print('Saved...')
                         self.saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(step, temp_acc))
 
 
@@ -185,5 +181,4 @@ class Model:
             raise Exception('Valid tf session should be passed in ')
 
         self.init.run()
-
         self.saver.restore(sess, file_name)

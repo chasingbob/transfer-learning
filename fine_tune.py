@@ -1,9 +1,9 @@
-"""Fine-tune existing model
+'''Fine-tune existing model
 
 Fine tune an existing model on a small data set by freezing bottom layers and
 training on the top layers by using a small learning rate.
 
-"""
+'''
 
 import os
 from datetime import datetime
@@ -26,13 +26,14 @@ root_logdir = "tf_logs"
 data_path = './data/dogs'
 
 def get_img_variations(img, label):
-    """Generate variations to the input image used by the augmentation step
+    '''Generate variations to the input image used by the augmentation step
 
     # Args:
         img: input image used to generate variations of
         label: the associated label
 
-    """
+    '''
+
     X_images = []; y_images = []
     X_images.append(img), 
     y_images.append(label)
@@ -76,14 +77,14 @@ def get_img_variations(img, label):
     return X_images, y_images
 
 def list_to_np(images, labels, image_size=128):
-    """Convert list to numpy array and process
+    '''Convert list to numpy array and process
 
     # Args:
         images: the list of images to convert
         labels: the associated labels
         image_size: the desired width/height of each image
 
-    """
+    '''
 
     assert len(images) == len(labels)
 
@@ -101,7 +102,7 @@ def list_to_np(images, labels, image_size=128):
     return X, y
 
 def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
-    """Prepare a batch for training
+    '''Prepare a batch for training
 
     # Args
         X: list of images
@@ -111,7 +112,7 @@ def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
         image_size: the desired width/height of each image
         use_augmentation: whether to generate variations or not
 
-    """
+    '''
     i = iteration * batch_size
     j = iteration * batch_size + batch_size
     if use_augmentation:
@@ -130,14 +131,14 @@ def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
         return list_to_np(X[i:j], y[i:j], image_size)
 
 
-def fetch_files(folder_name, label=0):
-    """Fetch all image files in specified folder
+def fetch_images(folder_name, label=0):
+    '''Fetch all image files in specified folder
 
     # Args:
         folder_name: name of folder
         label: class label associated with images in folder
 
-    """
+    '''
 
     path = os.path.join(data_path, folder_name, '*.jpg')
     files = sorted(glob(path))
@@ -153,18 +154,22 @@ def fetch_files(folder_name, label=0):
     return images, labels
 
 def load_data():
-    """Load all images and labels
+    '''Load all images and labels
 
     # Args:
 
-    """
+    '''
 
     print('Load images...')
 
-    images1, labels1 = fetch_files(folder_name='bastian', label=0)
-    images2, labels2 = fetch_files(folder_name='grace', label=1)
-    images3, labels3 = fetch_files(folder_name='bella', label=2)
-    images4, labels4 = fetch_files(folder_name='pablo', label=3)
+    images1, labels1 = fetch_images(folder_name='bastian', label=0)
+    print('Found {} Bastian images'.format(len(images1)))
+    images2, labels2 = fetch_images(folder_name='grace', label=1)
+    print('Found {} Grace images'.format(len(images2)))
+    images3, labels3 = fetch_images(folder_name='bella', label=2)
+    print('Found {} Bella images'.format(len(images3)))
+    images4, labels4 = fetch_images(folder_name='pablo', label=3)
+    print('Found {} Pablo images'.format(len(images4)))
 
     images = []; labels = []
 
@@ -188,11 +193,11 @@ def load_data():
 
 @click.command()
 @click.option('--model_path', default='', help='path to base model')
-@click.option('--epochs', default=10, help='number of epochs to train model')
+@click.option('--epochs', default=30, help='number of epochs to train model')
 @click.option('--batch_size', default=28, help='number of images to go into each training batch')
 @click.option('--image_size', default=128, help='fixed size of image')
 @click.option('--learning_rate', default=1e-3, help='optimizer learning rate')
-@click.option('--feedback_step', default=50, help='write to tensorboard every n-th step')
+@click.option('--feedback_step', default=20, help='write to tensorboard every n-th step')
 @click.option('--use_augmentation', is_flag=True, help='increase image pool by using augmentation')
 @click.option('--option', default='train', help='training or inference')
 def fine_tune(option, model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
@@ -205,7 +210,7 @@ def fine_tune(option, model_path, epochs, batch_size, image_size, learning_rate,
 
 
 def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
-    """Main method that controls the model training
+    '''Main method that controls the model training
 
     # Args:
         model_path: where to load base model
@@ -216,14 +221,14 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
         feedback_step: how often to give feedback to screen and TensorBoard
         use_augmentation: whether to increase training samples by generating variations
 
-    """
+    '''
     print('Fine tuning...')
 
     # Fetch all data, and split in train/validation/test sets
     X_data, y_data = load_data()
 
     X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.25, random_state=3)
-    X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size=0.57, random_state=51)
+    X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size=0.55, random_state=55)
 
     X_val, y_val = list_to_np(X_val, y_val, image_size)
     X_test, y_test = list_to_np(X_test, y_test, image_size)
@@ -238,29 +243,30 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
     # Load tensorflow graph
     saver = tf.train.import_meta_graph(model_path)
     # Access the graph
-    #for op in tf.get_default_graph().get_operations():
-    #    print(op.name)
+#    for op in tf.get_default_graph().get_operations():
+#        print(op.name)
+
 
     # input/output placeholders
-    X = tf.get_default_graph().get_tensor_by_name("placeholders/X/X:0")
-    y = tf.get_default_graph().get_tensor_by_name("placeholders/y/y:0")
+    X = tf.get_default_graph().get_tensor_by_name("placeholders/X:0")
+    y = tf.get_default_graph().get_tensor_by_name("placeholders/y:0")
 
     # Where we want to start fine tuning
-    pool4 = tf.get_default_graph().get_tensor_by_name("model/maxpool-4/MaxPool:0")
+    pool3 = tf.get_default_graph().get_tensor_by_name("model/maxpool-3/MaxPool:0")
 
     # This will freeze all the layers upto convmax4
-    maxpool_stop = tf.stop_gradient(pool4)
+    maxpool_stop = tf.stop_gradient(pool3)
 
     print('Create new top layers')
     with tf.name_scope('new-model'):
-        conv5 = tfe.conv(inputs=maxpool_stop, num_filters=512, name='conv-5')
-        pool5 = tfe.maxpool(inputs=conv5, name='maxpool-5')
-        print('pool5: {}'.format(pool5.shape))
+        conv4 = tfe.conv(inputs=maxpool_stop, num_filters=512, name='new-conv-4')
+        pool4 = tfe.maxpool(inputs=conv4, name='new-maxpool-4')
+        print('pool4: {}'.format(pool4.shape))
 
         with tf.name_scope('flat'):
-            new_flat = tf.reshape(pool5, shape=[-1, 512 * 4 * 4])
+            new_flat = tf.reshape(pool4, shape=[-1, 512 * 8 * 8])
         with tf.name_scope('fc-1'):
-            fc1 = tf.layers.dense(inputs=new_flat, units=1000, activation=tf.nn.relu)
+            fc1 = tf.layers.dense(inputs=new_flat, units=2048, activation=tf.nn.relu)
         with tf.name_scope('drop-out-1'):
             new_dropout = tf.layers.dropout(inputs=fc1, rate=0.5)
 
@@ -277,7 +283,7 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
         accuracy = tf.reduce_mean(tf.cast(correct, tf.float32), name="accuracy")
 
     with tf.name_scope("new_train"):
-        optimizer = tf.train.AdamOptimizer(learning_rate)
+        optimizer = tf.train.AdamOptimizer()
         training_op = optimizer.minimize(loss)
 
     with tf.name_scope('summary'):
@@ -290,7 +296,9 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
     saver = tf.train.Saver()
     step = 0
     print('Session open...')
-    with tf.Session() as sess:
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.Session(config = config) as sess:
         init.run()
         best_acc = 0.0
         for epoch in range(epochs):
@@ -310,7 +318,6 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
                     print('{}-{} Train acc: {} Val acc: {}'.format(epoch, step,acc_train, acc_val))
 
                     if acc_val > best_acc:
-                        print('... save')
                         best_acc = acc_val
                         saver.save(sess, "./finetune-model-{}-{:2.2f}.ckpt".format(epoch, acc_val))
 

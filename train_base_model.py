@@ -7,18 +7,18 @@ from glob import glob
 import random
 import numpy as np
 import tensorflow as tf
-from skimage import color, io
+from skimage import io
 from scipy.misc import imresize
 
 from base_model import Model
 
 def load_data(image_size=128):
-    """Load all the image files from disk
+    '''Load all the image files from disk
 
     # Args:
         image_size: size of image (width = height)
 
-    """
+    '''
     data_path = './data/train'
 
     cat_files_path = os.path.join(data_path, 'cat.*.jpg')
@@ -58,14 +58,14 @@ def load_data(image_size=128):
 
 images, labels = load_data()
 
-
 model = Model()
 
+
 with tf.Session() as sess:
-    model.train(images, labels, sess=sess, num_epochs=30, learning_rate=0.001)
-#    model.load('./model-1570-0.84.ckpt', sess=sess)
+#    model.load(file_name='model-40-0.58.ckpt', sess=sess)
+    model.train(images, labels, sess=sess, num_epochs=50, learning_rate=0.001)
     for i in range(50):
-        r = random.randint(0, 25000)
+        r = random.randint(0, 2500)
         result = model.predict(images[r], labels[r])
         print('Label: {} result: {} {}'.format(int(labels[r]), result, int(labels[r]) == result[0]))
 
