@@ -1,7 +1,7 @@
 # transfer-learning
 > Exploring ways to learn with the least amount of labelled data by taking advantage of transfer-learning techniques.
 
-I've set myself the challenge to classify images of my dogs using the least amount of training photos using the latest in transfer-learning techniques. 
+I've set myself the challenge to classify images of my 4 dogs using the least amount of training photos by exploring using transfer-learning techniques. I've got +-100 images of each dog - lets see how far we get. 
 
 ### Meet the dogs
 
@@ -12,15 +12,15 @@ Who wouldn't want to train on them? :-)
 
 ## Option 1: Fine-tune existing custom model
 
-The idea is to fine-tune a model trained on a large publicly available data set. I chose the Kaggle cats vs. dogs data set with 25000 images (12500 cats, 12500 dogs) hoping that my model will learn enough about the features that are unique to dogs to be able to fine tune the model on a small set of my dog images.
+The idea is to fine-tune a model trained on a large publicly available data set. I chose the Kaggle cats vs. dogs data set with 25000 images (12500 cats, 12500 dogs) hoping that my model will learn enough about the features that are unique to dogs to be able to fine tune the model on a small set of images of my dogs.
 
 ### The Architecture
 
-For the base model I have gone for a simple 5 layer convolutional neural network, each layer is made up of a convolutional layer followed by a max pool layer. Using 20000 of the training images you should be able to get about 85%+ accuracy before some serious overfitting kicks in.
+For the base model I am using a VGG-like architecture of 5 conv + max pool layers. 22500 images is used for training and the rest is hold out as a validation and test set. The model achieves 89% accuracy after training for about 20 epochs, but more importantly have learning features that are unique to dogs in general.
 
 ![Architecture](images/transfer-learning-custom-model.png)
 
-As can be seen from the diagram the bottom 4 layers are transferred and locked, and fine-tuning is done on a single convolutional layer followed by a max pool layer feeding into a fully connected layer which in turn feeds into a 4-class softmax layer.
+As can be seen from the diagram above the bottom 4 layers of the custom model are used, and a new conv + maxpool layer is added on top. The model then feeds into a fully connected layer with drop-out that finally feeds into a 4-class softmax layer for classification.
 
 
 ## Using the code

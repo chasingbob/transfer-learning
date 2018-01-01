@@ -147,7 +147,7 @@ class Model:
 
                     if temp_acc > prev_best:
                         prev_best = temp_acc
-                        self.saver.save(sess, "./model-{}-{:2.2f}.ckpt".format(step, temp_acc))
+                        self.saver.save(sess, "models/model-{}-{:2.2f}.ckpt".format(step, temp_acc))
 
 
     def predict(self, image, label):

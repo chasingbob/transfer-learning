@@ -126,7 +126,6 @@ def fetch_batch(X, y, iteration, batch_size, image_size, use_augmentation=True):
                 labels.append(_labels)
 
         return list_to_np(images, labels, image_size)
-
     else:
         return list_to_np(X[i:j], y[i:j], image_size)
 
@@ -156,8 +155,6 @@ def fetch_images(folder_name, label=0):
 def load_data():
     '''Load all images and labels
 
-    # Args:
-
     '''
 
     print('Load images...')
@@ -171,7 +168,8 @@ def load_data():
     images4, labels4 = fetch_images(folder_name='pablo', label=3)
     print('Found {} Pablo images'.format(len(images4)))
 
-    images = []; labels = []
+    images = []
+    labels = []
 
     for _x, _y in zip(images1, labels1):
         images.append(_x)
@@ -201,15 +199,16 @@ def load_data():
 @click.option('--use_augmentation', is_flag=True, help='increase image pool by using augmentation')
 @click.option('--option', default='train', help='training or inference')
 def fine_tune(option, model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
+    print('Augmentation: {}'.format(use_augmentation))
     if option == 'inference':
         visualise_test_predictions(model_path)
 
     elif option == 'train':
-        train(model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation)
+        train(model_path, epochs, batch_size, image_size, feedback_step, use_augmentation)
 
 
 
-def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_step, use_augmentation):
+def train(model_path, epochs, batch_size, image_size, feedback_step, use_augmentation):
     '''Main method that controls the model training
 
     # Args:
@@ -227,16 +226,12 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
     # Fetch all data, and split in train/validation/test sets
     X_data, y_data = load_data()
 
-    X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.25, random_state=3)
+    X_train, X_val, y_train, y_val = train_test_split(X_data, y_data, test_size=0.3, random_state=3)
     X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size=0.55, random_state=55)
 
     X_val, y_val = list_to_np(X_val, y_val, image_size)
     X_test, y_test = list_to_np(X_test, y_test, image_size)
 
-    print('X_test: {}'.format(X_test.shape))
-    print('y_test: {}'.format(y_test.shape))
-    print('X_val: {}'.format(X_val.shape))
-    print('y_val: {}'.format(y_val.shape))
 
     tf.reset_default_graph()
     
@@ -304,7 +299,7 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
         for epoch in range(epochs):
             for iteration in range(len(X_train) // batch_size):
 
-                X_batch, y_batch = fetch_batch(X_train, y_train, iteration, batch_size, image_size)
+                X_batch, y_batch = fetch_batch(X_train, y_train, iteration, batch_size, image_size, use_augmentation=use_augmentation)
                 sess.run(training_op, feed_dict={X: X_batch, y: y_batch})
 
                 step += 1
@@ -319,7 +314,7 @@ def train(model_path, epochs, batch_size, image_size, learning_rate, feedback_st
 
                     if acc_val > best_acc:
                         best_acc = acc_val
-                        saver.save(sess, "./finetune-model-{}-{:2.2f}.ckpt".format(epoch, acc_val))
+                        saver.save(sess, "models/finetune-model-{}-{:2.2f}.ckpt".format(epoch, acc_val))
 
         # Calc accuracy against test set
         accuracy_test = accuracy.eval(feed_dict={X: X_test, y: y_test})
